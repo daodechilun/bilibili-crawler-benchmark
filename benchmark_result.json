@@ -1,0 +1,9 @@
+{
+  "method": "Ajax接口爬取",
+  "pages": 10,
+  "total_items": 500,
+  "total_time": 1.44,
+  "avg_per_page": 0.14,
+  "memory": "<100 MB",
+  "cpu": "<5%"
+}
