@@ -1,0 +1,4 @@
+﻿model,R2,RMSE,MAE,CV_R2_mean
+LinearRegression,0.3702,6099.0,4547.0,0.2758
+RandomForest,0.2429,6686.0,5042.0,0.0846
+XGBoost,-0.0163,7747.0,5713.0,-0.1373

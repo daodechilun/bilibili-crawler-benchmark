@@ -1,0 +1,5 @@
+# 实验八：Scrapy框架开发与分布式实战 - 依赖库
+scrapy>=2.11.0
+scrapy-redis>=0.7.3
+redis>=5.0.0
+pymysql>=1.1.0

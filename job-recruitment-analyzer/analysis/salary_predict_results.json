@@ -1,0 +1,52 @@
+{
+  "model_compare": [
+    {
+      "model": "LinearRegression",
+      "R2": 0.3702,
+      "RMSE": 6099.0,
+      "MAE": 4547.0,
+      "CV_R2_mean": 0.2758
+    },
+    {
+      "model": "RandomForest",
+      "R2": 0.2429,
+      "RMSE": 6686.0,
+      "MAE": 5042.0,
+      "CV_R2_mean": 0.0846
+    },
+    {
+      "model": "XGBoost",
+      "R2": -0.0163,
+      "RMSE": 7747.0,
+      "MAE": 5713.0,
+      "CV_R2_mean": -0.1373
+    }
+  ],
+  "best_model": "LinearRegression",
+  "feature_importance": {
+    "random_forest": {
+      "city_tier_enc": 0.03733303871704688,
+      "education_enc": 0.22547724212318518,
+      "exp_avg": 0.3869517145562518,
+      "skill_count": 0.3502380046035161,
+      "is_face": 0.0,
+      "company_size_enc": 0.0
+    },
+    "xgboost": {
+      "city_tier_enc": 0.11975127458572388,
+      "education_enc": 0.422244131565094,
+      "exp_avg": 0.2719861567020416,
+      "skill_count": 0.1860184520483017,
+      "is_face": 0.0,
+      "company_size_enc": 0.0
+    },
+    "feature_names": [
+      "city_tier_enc",
+      "education_enc",
+      "exp_avg",
+      "skill_count",
+      "is_face",
+      "company_size_enc"
+    ]
+  }
+}

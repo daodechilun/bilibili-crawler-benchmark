@@ -1,0 +1,23 @@
+[
+  {
+    "model": "LinearRegression",
+    "R2": 0.3702,
+    "RMSE": 6099.0,
+    "MAE": 4547.0,
+    "CV_R2_mean": 0.2758
+  },
+  {
+    "model": "RandomForest",
+    "R2": 0.2429,
+    "RMSE": 6686.0,
+    "MAE": 5042.0,
+    "CV_R2_mean": 0.0846
+  },
+  {
+    "model": "XGBoost",
+    "R2": -0.0163,
+    "RMSE": 7747.0,
+    "MAE": 5713.0,
+    "CV_R2_mean": -0.1373
+  }
+]

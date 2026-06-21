@@ -1,0 +1,163 @@
+/* ============================================================
+   IT岗位数据分析大屏 — 双主题样式（深色科技 + 浅色商务）
+   ============================================================ */
+
+/* ---- 变量：深色主题（默认）---- */
+:root, body.dark {
+  --bg-primary: #0a0e27;
+  --bg-card: #111633;
+  --bg-card-hover: #1a1f3a;
+  --text-primary: #e0e6f0;
+  --text-secondary: #8892b0;
+  --accent: #4fc3f7;
+  --accent2: #ec407a;
+  --accent3: #ffd54f;
+  --accent4: #66bb6a;
+  --accent5: #ff7043;
+  --border: #1e2a45;
+  --kpi-bg: linear-gradient(135deg, #111633 0%, #161b3a 100%);
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --radius: 12px;
+  --chart-bg: transparent;
+  --select-bg: #111633;
+  --scrollbar-track: #0a0e27;
+  --scrollbar-thumb: #2a2a4a;
+}
+
+/* ---- 浅色主题 ---- */
+body.light {
+  --bg-primary: #f5f7fa;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f0f2f5;
+  --text-primary: #1a1a2e;
+  --text-secondary: #666;
+  --accent: #2563eb;
+  --accent2: #dc2626;
+  --accent3: #d97706;
+  --accent4: #16a34a;
+  --accent5: #ea580c;
+  --border: #e2e8f0;
+  --kpi-bg: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
+  --shadow: 0 2px 12px rgba(0,0,0,0.06);
+  --select-bg: #fff;
+  --scrollbar-track: #f5f7fa;
+  --scrollbar-thumb: #ccc;
+}
+
+/* ---- Reset ---- */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  transition: background 0.4s, color 0.4s;
+}
+
+/* ---- 顶部导航 ---- */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 24px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 100;
+}
+.topbar-left { display: flex; align-items: center; gap: 12px; }
+.topbar h1 {
+  font-size: 20px; font-weight: 700;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.topbar .subtitle { font-size: 12px; color: var(--text-secondary); }
+.topbar .subtitle strong { color: var(--accent); font-size: 14px; }
+
+.theme-switch {
+  display: flex; gap: 4px; background: var(--bg-primary); border-radius: 20px; padding: 3px;
+}
+.theme-switch button {
+  padding: 6px 16px; border: none; border-radius: 18px; cursor: pointer;
+  font-size: 12px; font-weight: 600; transition: all 0.2s;
+  background: transparent; color: var(--text-secondary);
+}
+.theme-switch button.active { background: var(--accent); color: #fff; }
+
+/* ---- KPI 数字看板 ---- */
+.kpi-row {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px;
+  padding: 16px 24px;
+}
+.kpi-card {
+  background: var(--kpi-bg); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px 14px;
+  box-shadow: var(--shadow); transition: transform 0.2s; text-align: center;
+}
+.kpi-card:hover { transform: translateY(-2px); }
+.kpi-card .label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.kpi-card .value { font-size: 26px; font-weight: 800; }
+.kpi-card .value.v1 { color: var(--accent); }
+.kpi-card .value.v2 { color: var(--accent4); }
+.kpi-card .value.v3 { color: var(--accent3); }
+.kpi-card .value.v4 { color: var(--accent5); }
+.kpi-card .value.v5 { color: var(--accent2); }
+.kpi-card .value.v6 { color: var(--accent5); }
+.kpi-card .unit { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+/* ---- 筛选栏 ---- */
+.filter-bar {
+  display: flex; gap: 10px; padding: 0 24px 12px; align-items: center; flex-wrap: wrap;
+}
+.filter-bar select {
+  padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--select-bg); color: var(--text-primary); font-size: 12px;
+  cursor: pointer; outline: none; transition: border-color 0.2s;
+}
+.filter-bar select:focus { border-color: var(--accent); }
+.filter-bar select option { background: var(--bg-card); color: var(--text-primary); }
+.filter-bar .reset-btn {
+  padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border);
+  background: transparent; color: var(--accent); cursor: pointer; font-size: 12px; font-weight: 600;
+  transition: all 0.2s;
+}
+.filter-bar .reset-btn:hover { background: var(--accent); color: #fff; }
+.filter-bar .filter-count { margin-left: auto; font-size: 12px; color: var(--text-secondary); }
+.filter-bar .filter-count strong { color: var(--accent4); font-size: 15px; }
+
+/* ---- 图表网格 (3列) ---- */
+.charts-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+  padding: 0 24px 24px;
+}
+.charts-grid .wide { grid-column: span 2; }
+
+.chart-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 12px;
+  box-shadow: var(--shadow); transition: transform 0.2s, border-color 0.2s;
+}
+.chart-card:hover { border-color: var(--accent); }
+.chart-title {
+  font-size: 13px; font-weight: 700; margin-bottom: 8px;
+  color: var(--text-primary); display: flex; align-items: center; gap: 8px;
+}
+.chart-title::before {
+  content: ''; display: inline-block; width: 4px; height: 16px;
+  border-radius: 2px; background: var(--accent); flex-shrink: 0;
+}
+.chart-box { width: 100%; height: 300px; }
+
+/* ---- Footer ---- */
+.footer {
+  text-align: center; padding: 12px; color: var(--text-secondary);
+  font-size: 11px; border-top: 1px solid var(--border);
+}
+
+/* ---- Scrollbar ---- */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
+
+/* ---- 响应式 ---- */
+@media (max-width: 1400px) { .kpi-row { grid-template-columns: repeat(3, 1fr); } .charts-grid { grid-template-columns: repeat(2, 1fr); } .charts-grid .wide { grid-column: span 2; } }
+@media (max-width: 768px) { .kpi-row { grid-template-columns: repeat(2, 1fr); } .charts-grid { grid-template-columns: 1fr; } .charts-grid .wide { grid-column: span 1; } .chart-box { height: 260px; } }

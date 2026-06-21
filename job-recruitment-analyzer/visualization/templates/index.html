@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>广东四市 IT 招聘市场深度分析 · 大屏</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts-wordcloud@2.1.0/dist/echarts-wordcloud.min.js"></script>
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="dark">
+
+<!-- ========== 顶部导航 + 主题切换 ========== -->
+<header class="topbar">
+  <div class="topbar-left">
+    <h1>🔍 广东四市 IT 招聘市场深度分析</h1>
+    <span class="subtitle">深圳 · 广州 · 珠海 · 肇庆 | <strong id="kpi-total">--</strong> 条真实数据</span>
+  </div>
+  <div class="theme-switch">
+    <button class="active" onclick="setTheme('dark')" id="btnDark">🌙 深色</button>
+    <button onclick="setTheme('light')" id="btnLight">☀️ 浅色</button>
+  </div>
+</header>
+
+<!-- ========== KPI 数字看板 ========== -->
+<div class="kpi-row">
+  <div class="kpi-card"><div class="label">总岗位数</div><div class="value v1" id="kpi-jobs">--</div><div class="unit">条真实数据</div></div>
+  <div class="kpi-card"><div class="label">整体平均薪资</div><div class="value v2" id="kpi-avg">--</div><div class="unit">元/月</div></div>
+  <div class="kpi-card"><div class="label">最高薪城市</div><div class="value v3" id="kpi-city">--</div><div class="unit" id="kpi-city-salary"></div></div>
+  <div class="kpi-card"><div class="label">最热技能词</div><div class="value v4" id="kpi-skill">--</div><div class="unit">最高频技能</div></div>
+  <div class="kpi-card"><div class="label">聚类簇数</div><div class="value v5" id="kpi-clusters">--</div><div class="unit" id="kpi-sil"></div></div>
+  <div class="kpi-card"><div class="label">最优薪资模型</div><div class="value v6" id="kpi-r2">--</div><div class="unit" id="kpi-model"></div></div>
+</div>
+
+<!-- ========== 筛选栏 ========== -->
+<div class="filter-bar">
+  <select id="filter-city"><option value="">🏙️ 全部城市</option></select>
+  <select id="filter-edu"><option value="">🎓 全部学历</option></select>
+  <select id="filter-keyword"><option value="">🔑 全部关键词</option></select>
+  <select id="filter-exp"><option value="">💼 全部经验</option></select>
+  <button class="reset-btn" onclick="resetFilters()">↻ 重置筛选</button>
+  <span class="filter-count">筛选结果：<strong id="filtered-count">--</strong> 条</span>
+</div>
+
+<!-- ========== 图表网格 ========== -->
+<div class="charts-grid">
+
+  <div class="chart-card">
+    <div class="chart-title">📊 各城市平均薪资</div>
+    <div class="chart-box" id="chartBarCity"></div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">🎓 学历要求分布</div>
+    <div class="chart-box" id="chartPieEdu"></div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">🤖 薪资预测模型对比</div>
+    <div class="chart-box" id="chartModelCmp"></div>
+  </div>
+
+  <div class="chart-card wide">
+    <div class="chart-title">🗺️ 大湾区四市岗位薪资热力</div>
+    <div class="chart-box" id="chartMap"></div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">📈 经验年限 vs 平均薪资</div>
+    <div class="chart-box" id="chartLineExp"></div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">🎯 学历 × 薪资分布</div>
+    <div class="chart-box" id="chartScatterEdu"></div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">🔮 岗位聚类画像</div>
+    <div class="chart-box" id="chartCluster"></div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">🏷️ 高频技能词云</div>
+    <div class="chart-box" id="chartWordcloud"></div>
+  </div>
+
+  <div class="chart-card wide">
+    <div class="chart-title">🔑 薪资影响因素 — 特征重要性</div>
+    <div class="chart-box" id="chartFeature"></div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">🏭 行业薪资 Top10</div>
+    <div class="chart-box" id="chartIndustry"></div>
+  </div>
+
+</div>
+
+<footer class="footer">
+  📌 《网络爬虫与数据收集》课程大作业 | 数据来源：51job | Flask + ECharts | 广东四市（广深珠肇）深度分析
+</footer>
+
+<script>
+// ===== 全局 =====
+let charts = {};
+let gdMapRegistered = false;
+
+// ===== 主题颜色 =====
+function tc() {
+  const isLight = document.body.className === 'light';
+  return {
+    text: isLight ? '#1a1a2e' : '#e0e6f0',
+    subtext: isLight ? '#666' : '#8892b0',
+    splitLine: isLight ? '#e2e8f0' : '#1e2a45',
+    axisLine: isLight ? '#ccc' : '#2a3a5c',
+  };
+}
+
+// ===== 主题切换 =====
+function setTheme(t) {
+  document.body.className = t;
+  document.getElementById('btnDark').classList.toggle('active', t==='dark');
+  document.getElementById('btnLight').classList.toggle('active', t==='light');
+  setTimeout(() => { Object.values(charts).forEach(c => c.resize()); loadDashboard(); }, 100);
+}
+
+// ===== 初始化图表 =====
+function initChart(id, opts) {
+  const el = document.getElementById(id);
+  if (!el) return null;
+  const c = echarts.init(el, null, opts);
+  charts[id] = c;
+  return c;
+}
+
+// ===== 加载广东地图 =====
+async function loadGdMap() {
+  try {
+    const resp = await fetch('https://geo.datav.aliyun.com/areas_v3/bound/440000_full.json');
+    if (resp.ok) {
+      echarts.registerMap('guangdong', await resp.json());
+      gdMapRegistered = true;
+      console.log('[MAP] 广东地图 CDN 加载成功');
+      return;
+    }
+  } catch(e) { console.warn('[MAP] CDN 失败:', e.message); }
+  try {
+    const resp = await fetch('/static/guangdong.json');
+    if (resp.ok) {
+      echarts.registerMap('guangdong', await resp.json());
+      gdMapRegistered = true;
+      console.log('[MAP] 本地地图加载成功');
+    }
+  } catch(e) { console.warn('[MAP] 本地也失败:', e.message); }
+}
+
+async function loadMap() {
+  const c = initChart('chartMap');
+  const scatterData = [
+    {name:'深圳',value:[114.07,22.62,19935,195]},
+    {name:'广州',value:[113.26,23.13,16420,184]},
+    {name:'珠海',value:[113.57,22.27,19446,28]},
+    {name:'肇庆',value:[112.46,23.05,9750,2]},
+  ];
+  function renderMap(mapName) {
+    const isLight = document.body.className === 'light';
+    c.setOption({
+      tooltip:{trigger:'item',formatter:p=>p.name+': 均薪 '+p.value[2].toLocaleString()+' 元 | '+p.value[3]+' 岗位'},
+      geo:{map:mapName,roam:false,itemStyle:{areaColor:isLight?'#f0f0f0':'#1a1f3a',borderColor:isLight?'#ddd':'#2a3a5c',borderWidth:1},emphasis:{itemStyle:{areaColor:isLight?'#e0e0e0':'#253050'},label:{show:true,fontSize:11,color:isLight?'#333':'#e0e6f0'}}},
+      series:[{type:'effectScatter',coordinateSystem:'geo',symbolSize:v=>12+Math.sqrt(v[3])*4,data:scatterData,label:{show:true,position:'right',fontSize:12,fontWeight:600,color:isLight?'#333':'#e0e6f0',formatter:p=>p.name},itemStyle:{shadowBlur:12,shadowColor:'rgba(79,195,247,0.6)'},rippleEffect:{brushType:'stroke',scale:3},encode:{tooltip:[2,3]}}]
+    });
+  }
+  if (gdMapRegistered) { renderMap('guangdong'); return; }
+  // fallback: scatter
+  c.setOption({
+    xAxis:{type:'value',show:false,min:110,max:116},
+    yAxis:{type:'value',show:false,min:20,max:25},
+    series:[{type:'scatter',symbolSize:v=>Math.sqrt(v[3])*6,data:scatterData.map(d=>({name:d.name,value:[d.value[0],d.value[1],d.value[2],d.value[3]]})),label:{show:true,position:'top',fontSize:13,fontWeight:700,formatter:p=>p.name+'\n均薪 '+p.value[2].toLocaleString()+' 元'},itemStyle:{color:'#4fc3f7'}}]
+  });
+}
+
+// ===== 加载 KPI =====
+async function loadKPI() {
+  try {
+    const d = await (await fetch('/api/kpi')).json();
+    if (d.error) return;
+    document.getElementById('kpi-jobs').textContent = d.total_jobs;
+    document.getElementById('kpi-avg').textContent = d.avg_salary.toLocaleString();
+    document.getElementById('kpi-city').textContent = d.top_city;
+    document.getElementById('kpi-city-salary').textContent = '均薪 '+d.top_city_salary.toLocaleString()+' 元';
+    document.getElementById('kpi-skill').textContent = d.top_skill;
+    document.getElementById('kpi-clusters').textContent = d.n_clusters;
+    document.getElementById('kpi-sil').textContent = '轮廓系数 '+d.silhouette;
+    document.getElementById('kpi-r2').textContent = 'R² '+d.best_r2;
+    document.getElementById('kpi-model').textContent = d.best_model;
+    document.getElementById('kpi-total').textContent = d.total_jobs;
+  } catch(e) { console.error('KPI加载失败:', e); }
+}
+
+// ===== 加载仪表盘数据 =====
+async function loadDashboard() {
+  Object.values(charts).forEach(c => c.showLoading && c.showLoading());
+  const params = new URLSearchParams();
+  ['filter-city','filter-edu','filter-keyword','filter-exp'].forEach(id => {
+    const v = document.getElementById(id).value;
+    if (v) params.append(id.replace('filter-',''), id==='filter-exp' ? v.replace('年','') : v);
+  });
+  try {
+    const d = await (await fetch('/api/dashboard?'+params.toString())).json();
+    if (d.error) { Object.values(charts).forEach(c => c.hideLoading && c.hideLoading()); return; }
+    document.getElementById('filtered-count').textContent = d.count;
+    if (charts.chartBarCity) updateBarCity(d.chart_bar_city);
+    if (charts.chartPieEdu) updatePieEdu(d.chart_pie_edu);
+    // 地图在 init 中已加载一次，不随筛选反复初始化
+    if (charts.chartWordcloud) updateWordcloud(d.chart_wordcloud);
+    if (charts.chartLineExp) updateLineExp(d.chart_line_exp);
+    if (charts.chartIndustry) updateIndustry(d.chart_industry);
+    // 散点图也更新
+    if (charts.chartScatterEdu) updateScatterEdu(d.chart_scatter_exp);
+  } catch(e) { console.error('Dashboard加载失败:', e); }
+  Object.values(charts).forEach(c => c.hideLoading && c.hideLoading());
+}
+
+// ===== 加载 ML 数据 =====
+async function loadML() {
+  try {
+    const cl = await (await fetch('/api/ml/clusters')).json();
+    if (charts.chartCluster && cl.profiles) updateCluster(cl.profiles);
+
+    const mc = await (await fetch('/api/ml/models')).json();
+    if (charts.chartModelCmp && mc.models) updateModelCmp(mc.models);
+
+    const ft = await (await fetch('/api/ml/features')).json();
+    if (charts.chartFeature && ft.feature_names) updateFeature(ft);
+  } catch(e) { console.error('ML加载失败:', e); }
+}
+
+// ===== 图表更新函数 =====
+function updateBarCity(d) {
+  if (!d || !d.x) return;
+  const c = tc();
+  charts.chartBarCity.setOption({
+    tooltip:{trigger:'axis',formatter:p=>p[0].name+'<br/>均薪: '+p[0].value.toLocaleString()+' 元'},
+    grid:{left:60,right:20,top:10,bottom:20},
+    xAxis:{type:'value',name:'元/月',nameTextStyle:{color:c.subtext},axisLabel:{formatter:v=>v/1000+'k',color:c.subtext},splitLine:{lineStyle:{color:c.splitLine,type:'dashed'}}},
+    yAxis:{type:'category',inverse:true,data:d.x,axisLabel:{fontSize:12,fontWeight:600,color:c.text},axisLine:{lineStyle:{color:c.axisLine}}},
+    series:[{type:'bar',barWidth:22,data:d.avg_salaries.map((v,i)=>({value:v,itemStyle:{color:['#ec407a','#ffd54f','#4fc3f7','#66bb6a'][i]||'#4fc3f7'}})),label:{show:true,position:'right',color:c.subtext,formatter:p=>p.value.toLocaleString()+'元'}}]
+  }, true);
+}
+
+function updatePieEdu(d) {
+  if (!d || !d.data) return;
+  const c = tc();
+  charts.chartPieEdu.setOption({
+    tooltip:{trigger:'item',formatter:p=>p.name+': '+p.value+'条 ('+p.percent+'%)<br/>均薪 '+(d.data[p.dataIndex]?.avg_salary||'--')+' 元'},
+    legend:{bottom:0,textStyle:{color:c.text}},
+    series:[{type:'pie',radius:['55%','78%'],center:['50%','45%'],roseType:'area',itemStyle:{borderRadius:6,borderWidth:3},
+      label:{formatter:'{b}\n{d}%',fontSize:11,color:c.subtext},
+      data:d.data.map((v,i)=>({...v,itemStyle:{color:['#66bb6a','#4fc3f7','#ffd54f','#ec407a'][i]||'#4fc3f7'}}))}]
+  }, true);
+}
+
+function updateModelCmp(models) {
+  if (!models) return;
+  const c = tc();
+  charts.chartModelCmp.setOption({
+    tooltip:{trigger:'axis'},
+    grid:{left:50,right:20,top:20,bottom:30},
+    xAxis:{type:'category',data:models.map(m=>m.name),axisLabel:{color:c.text},axisLine:{lineStyle:{color:c.axisLine}}},
+    yAxis:{type:'value',name:'R²',nameTextStyle:{color:c.subtext},axisLabel:{color:c.subtext},splitLine:{lineStyle:{color:c.splitLine,type:'dashed'}}},
+    series:[{type:'bar',barWidth:32,
+      data:models.map(m=>({value:m.R2,itemStyle:{color:m.R2>=0?'#4fc3f7':'#ef5350',borderRadius:[6,6,0,0]}})),
+      label:{show:true,position:'top',color:c.subtext,formatter:p=>p.value.toFixed(3)},
+      markLine:{silent:true,symbol:'none',data:[{yAxis:0,label:{formatter:'R²=0',color:c.subtext},lineStyle:{color:c.splitLine}}]}
+    }]
+  }, true);
+}
+
+function updateLineExp(d) {
+  if (!d || !d.x) return;
+  const c = tc();
+  const colors = ['#4fc3f7','#ffd54f','#66bb6a','#ec407a','#ab47bc'];
+  charts.chartLineExp.setOption({
+    tooltip:{trigger:'axis',formatter:ps=>ps.map(p=>p.seriesName+': '+(p.value!=null?p.value.toLocaleString()+'元':'--')).join('<br/>')},
+    legend:{bottom:0,type:'scroll',textStyle:{color:c.text}},
+    grid:{left:55,right:20,top:15,bottom:35},
+    xAxis:{type:'category',data:d.x,axisLabel:{color:c.subtext},axisLine:{lineStyle:{color:c.axisLine}}},
+    yAxis:{type:'value',name:'元/月',nameTextStyle:{color:c.subtext},axisLabel:{color:c.subtext,formatter:v=>v/1000+'k'},splitLine:{lineStyle:{color:c.splitLine}}},
+    series:(d.series||[]).map((s,i)=>({name:s.name,type:'line',data:s.avg_salaries,smooth:true,symbol:'circle',symbolSize:8,lineStyle:{width:i===0?3:2,color:colors[i%5]},itemStyle:{color:colors[i%5]},areaStyle:i===0?{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:'rgba(79,195,247,0.3)'},{offset:1,color:'rgba(79,195,247,0.02)'}]}}:undefined}))
+  }, true);
+}
+
+function updateWordcloud(d) {
+  if (!d || !d.data || d.data.length===0) return;
+  charts.chartWordcloud.setOption({
+    tooltip:{show:true,formatter:p=>p.name+': '+p.value+'次'},
+    series:[{type:'wordCloud',shape:'circle',sizeRange:[14,42],rotationRange:[-30,30],gridSize:8,
+      textStyle:{color:()=>['#4fc3f7','#66bb6a','#ffd54f','#ec407a','#ab47bc','#ff7043'][Math.floor(Math.random()*6)]},
+      data:d.data}]
+  }, true);
+}
+
+function updateIndustry(d) {
+  if (!d || !d.industries) return;
+  const c = tc();
+  charts.chartIndustry.setOption({
+    tooltip:{trigger:'axis'},
+    grid:{left:100,right:20,top:10,bottom:10},
+    xAxis:{type:'value',name:'元/月',nameTextStyle:{color:c.subtext},axisLabel:{color:c.subtext,formatter:v=>v/1000+'k'},splitLine:{lineStyle:{color:c.splitLine}}},
+    yAxis:{type:'category',inverse:true,data:d.industries.map(n=>n.length>8?n.slice(0,8)+'...':n),axisLabel:{fontSize:10,color:c.text},axisLine:{lineStyle:{color:c.axisLine}}},
+    series:[{type:'bar',barWidth:14,data:d.avg_salaries.map(v=>({value:v,itemStyle:{color:v>=25000?'#ec407a':v>=20000?'#ffd54f':'#4fc3f7',borderRadius:[0,4,4,0]}})),label:{show:true,position:'right',fontSize:9,color:c.subtext,formatter:p=>p.value.toLocaleString()+'元'}}]
+  }, true);
+}
+
+function updateScatterEdu(d) {
+  if (!d || !d.series) return;
+  const c = tc();
+  charts.chartScatterEdu.setOption({
+    tooltip:{trigger:'item',formatter:p=>p.seriesName+': '+p.value[1].toFixed(0)+' 元'},
+    legend:{bottom:0,type:'scroll',textStyle:{color:c.text}},
+    grid:{left:55,right:15,top:15,bottom:30},
+    xAxis:{type:'value',name:'城市',nameTextStyle:{color:c.subtext},axisLabel:{color:c.subtext},splitLine:{lineStyle:{color:c.splitLine}}},
+    yAxis:{type:'value',name:'元/月',nameTextStyle:{color:c.subtext},axisLabel:{color:c.subtext,formatter:v=>v/1000+'k'},splitLine:{lineStyle:{color:c.splitLine}}},
+    series:d.series.map((s,i)=>({...s,type:'scatter',symbolSize:7,itemStyle:{opacity:0.7,color:['#4fc3f7','#ffd54f','#66bb6a','#ec407a','#ab47bc'][i%5]}}))
+  }, true);
+}
+
+function updateCluster(profiles) {
+  if (!profiles || profiles.length===0) return;
+  const c = tc();
+  const show = profiles.filter(p=>['高薪资深岗','高学历高薪岗','高薪技术岗','中高级技术岗','初级入门岗','中级技术岗'].includes(p.name)).slice(0,6);
+  const indicator = [{name:'平均薪资',max:40000},{name:'平均经验',max:7},{name:'学历(编码)',max:5},{name:'簇规模',max:80}];
+  const eduMap = {'大专':1,'本科':2,'硕士':3,'博士':4};
+  const colors = ['#ec407a','#ffd54f','#4fc3f7','#66bb6a','#ab47bc','#ff7043'];
+  charts.chartCluster.setOption({
+    tooltip:{},
+    legend:{bottom:0,type:'scroll',textStyle:{color:c.text}},
+    radar:{center:['50%','48%'],radius:'62%',indicator:indicator.map(i=>({...i,axisLabel:{color:c.text}})),axisName:{color:c.text,fontSize:10},splitArea:{areaStyle:{color:['rgba(79,195,247,0.02)','rgba(79,195,247,0.02)','rgba(79,195,247,0.02)','rgba(79,195,247,0.05)']}},splitLine:{lineStyle:{color:c.splitLine}},axisLine:{lineStyle:{color:c.axisLine}}},
+    series:[{type:'radar',
+      data:show.map((p,i)=>({name:p.name,value:[p.avg_salary||0,p.avg_exp||0,eduMap[p.edu]||2,p.count||0],symbol:'circle',symbolSize:4,lineStyle:{color:colors[i],width:2},areaStyle:{color:colors[i],opacity:0.08},itemStyle:{color:colors[i]}}))
+    }]
+  }, true);
+}
+
+function updateFeature(data) {
+  if (!data || !data.feature_names) return;
+  const c = tc();
+  const fmap = {'city_tier_enc':'城市等级','education_enc':'学历','exp_avg':'工作经验','skill_count':'技能数量','is_face':'是否AI','company_size_enc':'公司规模'};
+  const names = data.feature_names.map(n=>fmap[n]||n);
+  const rf = data.feature_names.map(n=>data.random_forest?.[n]||0);
+  const xgb = data.feature_names.map(n=>data.xgboost?.[n]||0);
+  charts.chartFeature.setOption({
+    tooltip:{trigger:'axis'},
+    legend:{data:['随机森林','XGBoost'],top:0,textStyle:{color:c.text}},
+    grid:{left:20,right:30,top:35,bottom:15},
+    xAxis:{type:'value',name:'重要性',nameTextStyle:{color:c.subtext},axisLabel:{color:c.subtext},splitLine:{lineStyle:{color:c.splitLine,type:'dashed'}}},
+    yAxis:{type:'category',inverse:true,data:names,axisLabel:{fontSize:11,fontWeight:600,color:c.text},axisLine:{lineStyle:{color:c.axisLine}}},
+    series:[
+      {name:'随机森林',type:'bar',barGap:'20%',barWidth:12,data:rf.map(v=>({value:v,itemStyle:{color:'#4fc3f7',borderRadius:[0,4,4,0]}})),label:{show:true,position:'right',fontSize:10,color:c.subtext,formatter:p=>p.value.toFixed(3)}},
+      {name:'XGBoost',type:'bar',barWidth:12,data:xgb.map(v=>({value:v,itemStyle:{color:'#ec407a',borderRadius:[0,4,4,0]}})),label:{show:true,position:'right',fontSize:10,color:c.subtext,formatter:p=>p.value.toFixed(3)}},
+    ]
+  }, true);
+}
+
+// ===== 筛选 =====
+function resetFilters() {
+  ['filter-city','filter-edu','filter-keyword','filter-exp'].forEach(id => document.getElementById(id).value='');
+  loadDashboard();
+}
+
+// ===== 初始化 =====
+async function init() {
+  // 初始化所有图表
+  initChart('chartBarCity');
+  initChart('chartPieEdu');
+  initChart('chartModelCmp');
+  initChart('chartLineExp');
+  initChart('chartScatterEdu');
+  initChart('chartCluster');
+  initChart('chartWordcloud');
+  initChart('chartFeature');
+  initChart('chartIndustry');
+
+  await loadGdMap();
+  loadMap(); // 地图仅初始化一次
+
+  // 加载筛选选项
+  try {
+    const opts = await (await fetch('/api/filter_options')).json();
+    ['filter-city','filter-edu','filter-keyword'].forEach(id => {
+      const sel = document.getElementById(id);
+      const key = id.replace('filter-','')+(id==='filter-keyword'?'s':'s');
+      (opts[key.slice(0,-1)+(id==='filter-keyword'?'s':'')]||opts[id.replace('filter-','')+'s']||[]).forEach(v => {
+        const o = document.createElement('option');
+        o.value = v; o.textContent = v; sel.appendChild(o);
+      });
+    });
+  } catch(e) { console.warn('筛选选项加载失败:', e); }
+
+  // 加载所有数据
+  await Promise.all([loadKPI(), loadDashboard(), loadML()]);
+}
+
+// 事件绑定
+['filter-city','filter-edu','filter-keyword','filter-exp'].forEach(id => {
+  document.getElementById(id).addEventListener('change', loadDashboard);
+});
+window.addEventListener('resize', () => Object.values(charts).forEach(c => c.resize && c.resize()));
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Node
+node_modules/
+package-lock.json
+
+# 数据与日志（产物，不入库）
+data/raw/
+data/cleaned/
+logs/
+*.log
+
+# 驱动/压缩包
+chromedriver.exe
+*.zip
+
+# Scrapy 爬取产物
+exp8_scrapy_demo/output/
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+.ipynb_checkpoints/
+.DS_Store
+Thumbs.db
